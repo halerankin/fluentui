@@ -334,12 +334,12 @@ export const styles = css`
     }
     99% {
       width: 100%;
-      height: 28;
+      height: 28px;
       overflow: visible;
     }
     0% {
       width: 100%;
-      height: 28;
+      height: 28px;
       overflow: visible;
     }
   }

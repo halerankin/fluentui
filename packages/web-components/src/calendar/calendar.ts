@@ -38,6 +38,7 @@ const RowAnimatedUp = 'animated-up';
  */
 const RowAnimatedDown = 'animated-down';
 
+const animationTiming: number = 367;
 /**
  * Month picker information needed for rendering
  * including the next and previous years
@@ -225,18 +226,22 @@ export class Calendar extends FASTCalendar {
     super.disconnectedCallback();
   }
 
-  public attributeChangedCallback(name: string, oldValue: string, newValue: string) {
+  public attributeChangedCallback(name: string) {
     // Sets focus on day grid cell when the month is updated on the day grid
     if (name === 'month') {
       if (this.navigatedDate.getMonth() + 1 != this.month || this.navigatedDate.getFullYear() != this.year) {
         const el = this.getNavigatedDayElement();
-        el.tabIndex = -1;
-        this.navigatedDate = new Date(`${this.year}/${this.month}/01`);
+        if (el) {
+          el.tabIndex = -1;
+          this.navigatedDate = new Date(`${this.year}/${this.month}/01`);
+        }
       }
 
       Updates.enqueue(() => {
         const el = this.getNavigatedDayElement();
-        el.tabIndex = 0;
+        if (el) {
+          el.tabIndex = 0;
+        }
       });
     }
 
@@ -316,9 +321,9 @@ export class Calendar extends FASTCalendar {
 
     // Check which transition to use for the primary panel
     if ((month < this.month && year == this.year) || year < this.year) {
-      this.prevMonthTransition();
+      this.setPrimaryPanelDirectionalCssClass('previous');
     } else if ((month > this.month && year == this.year) || year > this.year) {
-      this.nextMonthTransition();
+      this.setPrimaryPanelDirectionalCssClass('next');
     }
 
     // Check which transition to use for the secondary panel
@@ -342,7 +347,9 @@ export class Calendar extends FASTCalendar {
 
     Updates.enqueue(() => {
       const el = this.getNavigatedDayElement();
-      el.focus();
+      if (el) {
+        el.focus();
+      }
     });
   }
 
@@ -428,6 +435,9 @@ export class Calendar extends FASTCalendar {
       let monthCount = 0;
 
       while (monthCount < months.length || monthsText[monthsText.length - 1].length % 4 !== 0) {
+        // if (monthCount >= months.length) {
+        //   break;
+        // }
         const month = { text: months[monthCount], detail: monthCount + 1 };
         const currentRow = monthsText[monthsText.length - 1];
         if (monthsText.length === 0 || currentRow.length % 4 === 0) {
@@ -437,9 +447,6 @@ export class Calendar extends FASTCalendar {
         }
         monthCount++;
       }
-    } else {
-      // Handle the case when months is not populated correctly.
-      // Maybe throw an error or return a default value.
     }
     return monthsText;
   }
@@ -452,17 +459,23 @@ export class Calendar extends FASTCalendar {
   public getDecadeText(decadeStartYear: number): { text: string; detail: number }[][] {
     const decade = this.dateFormatter.getDecade(decadeStartYear);
     const decadeText: { text: string; detail: number }[][] = [];
-    let yearCount = 0;
 
-    while (yearCount < decade.length || decadeText[decadeText.length - 1].length % 4 !== 0) {
-      const yearText = { text: decade[yearCount], detail: decadeStartYear + yearCount };
-      const currentRow = decadeText[decadeText.length - 1];
-      if (decadeText.length === 0 || currentRow.length % 4 === 0) {
-        decadeText.push([yearText]);
-      } else {
-        currentRow.push(yearText);
+    if (decade && Array.isArray(decade) && decade.length > 0) {
+      let yearCount = 0;
+
+      while (yearCount < decade.length || decadeText[decadeText.length - 1].length % 4 !== 0) {
+        // if (yearCount >= decade.length) {
+        //   break;
+        // }
+        const yearText = { text: decade[yearCount], detail: decadeStartYear + yearCount };
+        const currentRow = decadeText[decadeText.length - 1];
+        if (decadeText.length === 0 || currentRow.length % 4 === 0) {
+          decadeText.push([yearText]);
+        } else {
+          currentRow.push(yearText);
+        }
+        yearCount++;
       }
-      yearCount++;
     }
     return decadeText;
   }
@@ -471,7 +484,7 @@ export class Calendar extends FASTCalendar {
    * Updates calendar to show today when user clicks on "Go to today"
    * @param event - mouse event for clicking on the link
    */
-  public handleGoToToday() {
+  public goToToday() {
     const today: Date = new Date();
     this.handleSwitchMonth(today.getMonth() + 1, today.getFullYear());
     this.yearPickerOpen = false;
@@ -546,6 +559,7 @@ export class Calendar extends FASTCalendar {
    */
   public handleSecondaryPanelTitleKeydown(event: KeyboardEvent): boolean {
     if (event.key === keyEnter) {
+      event.preventDefault();
       this.toggleYearPicker();
     }
     return true;
@@ -557,7 +571,8 @@ export class Calendar extends FASTCalendar {
    */
   public handleLinkKeydown(event: KeyboardEvent): boolean {
     if (event.key === keyEnter) {
-      this.handleGoToToday();
+      event.preventDefault();
+      this.goToToday();
     }
     return true;
   }
@@ -764,47 +779,39 @@ export class Calendar extends FASTCalendar {
   }
 
   /**
-   * Handles CSS animation classes for previous direction transitions on the primary panel
+   * Handles CSS animation classes for direction transitions on the primary panel
+   * @param direction - 'previous' or 'next'
    * @private
    */
-  private prevMonthTransition() {
+
+  private setPrimaryPanelDirectionalCssClass(direction: string) {
     Updates.enqueue(() => {
       const rows = this.shadowRoot && Array.from(this.shadowRoot?.querySelectorAll('.week'));
 
-      rows?.forEach(row => row.classList.add(RowAnimatedUp));
+      if (direction === 'previous') {
+        rows?.forEach(row => row.classList.add(RowAnimatedUp));
 
-      const firstTransitionRow = this.shadowRoot?.querySelector('.week-days')?.nextElementSibling as HTMLElement;
+        const firstTransitionRow = this.shadowRoot?.querySelector('.week-days')?.nextElementSibling as HTMLElement;
 
-      firstTransitionRow.classList.add(FirstRowAnimated);
+        firstTransitionRow.classList.add(FirstRowAnimated);
 
-      //The timeout for the animation is set to the duration of the CSS animation as specified in the stylesheet
-      setTimeout(() => {
-        firstTransitionRow.classList.remove(FirstRowAnimated);
-        rows?.forEach(row => row.classList.remove(RowAnimatedUp));
-      }, 367);
-    });
-  }
+        setTimeout(() => {
+          firstTransitionRow.classList.remove(FirstRowAnimated);
+          rows?.forEach(row => row.classList.remove(RowAnimatedUp));
+        }, animationTiming);
+      } else if (direction === 'next') {
+        rows?.forEach(row => row.classList.add(RowAnimatedDown));
 
-  /**
-   * Handles CSS animation classes for next direction transitions on the primary panel
-   * @private
-   */
-  private nextMonthTransition() {
-    Updates.enqueue(() => {
-      const rows = this.shadowRoot && Array.from(this.shadowRoot?.querySelectorAll('.week'));
+        const lastTransitionRow = this.shadowRoot?.querySelector('.week-days')?.parentElement
+          ?.lastElementChild as HTMLElement;
 
-      rows?.forEach(row => row.classList.add(RowAnimatedDown));
+        lastTransitionRow.classList.add(LastRowAnimated);
 
-      const lastTransitionRow = this.shadowRoot?.querySelector('.week-days')?.parentElement
-        ?.lastElementChild as HTMLElement;
-
-      lastTransitionRow.classList.add(LastRowAnimated);
-
-      //The timeout for the animation is set to the duration of the CSS animation as specified in the stylesheet
-      setTimeout(() => {
-        lastTransitionRow.classList.remove(LastRowAnimated);
-        rows?.forEach(row => row.classList.remove(RowAnimatedDown));
-      }, 367);
+        setTimeout(() => {
+          lastTransitionRow.classList.remove(LastRowAnimated);
+          rows?.forEach(row => row.classList.remove(RowAnimatedDown));
+        }, animationTiming);
+      }
     });
   }
 
@@ -831,7 +838,7 @@ export class Calendar extends FASTCalendar {
         } else if (direction === 'next') {
           secondaryPanelRows?.forEach(secondaryPanelRow => secondaryPanelRow.classList.remove(RowAnimatedDown));
         }
-      }, 367);
+      }, animationTiming);
     });
   }
 }

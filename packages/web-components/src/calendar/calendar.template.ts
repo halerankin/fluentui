@@ -13,6 +13,8 @@ const ArrowDown16 = html.partial(`
 </svg>
 `);
 
+const slottedLinkText: string = 'Go to today';
+
 export function calendarTitleTemplate<T extends Calendar>(): ViewTemplate<T> {
   return html`
     <div
@@ -206,10 +208,8 @@ export const template: ElementViewTemplate<Calendar> = html`
               part="navicon-up"
               role="navigation"
               aria-label="Previous Month"
-              aria-pressed="true"
               tabindex="0"
               @click="${x => x.handleSwitchMonth(x.getMonthInfo().previous.month, x.getMonthInfo().previous.year)}"
-              @keydown="${(x, c) => x.handleNavIconKeydown(c.event as KeyboardEvent, 'primary', 'previous')}"
               >${ArrowUp16}</fluent-button
             >
             <fluent-button
@@ -219,10 +219,8 @@ export const template: ElementViewTemplate<Calendar> = html`
               part="navicon-up"
               role="navigation"
               aria-label="Next Month"
-              aria-pressed="true"
               tabindex="0"
               @click="${x => x.handleSwitchMonth(x.getMonthInfo().next.month, x.getMonthInfo().next.year)}"
-              @keydown="${(x, c) => x.handleNavIconKeydown(c.event as KeyboardEvent, 'primary', 'next')}"
               >${ArrowDown16}</fluent-button
             >
           </div>
@@ -241,10 +239,10 @@ export const template: ElementViewTemplate<Calendar> = html`
           <div
             class=${x => (x.isToday() ? 'slotted-link inactive' : 'slotted-link')}
             tabindex="0"
-            @click="${(x, c) => x.handleGoToToday()}"
+            @click="${(x, c) => x.goToToday()}"
             @keydown="${(x, c) => x.handleLinkKeydown(c.event as KeyboardEvent)}"
           >
-            Go to today
+            ${slottedLinkText}
           </div>
         </div>`,
       )}
@@ -263,10 +261,8 @@ export const template: ElementViewTemplate<Calendar> = html`
                 part="navicon-up"
                 role="navigation"
                 aria-label="${x => (x.yearPickerOpen ? 'Previous Decade' : 'Previous Year')}"
-                aria-pressed="true"
                 tabindex="0"
                 @click="${x => x.handleSwitchSecondaryPanel('previous')}"
-                @keydown="${(x, c) => x.handleNavIconKeydown(c.event as KeyboardEvent, 'secondary', 'previous')}"
                 >${ArrowUp16}</fluent-button
               >
               <fluent-button
@@ -276,10 +272,8 @@ export const template: ElementViewTemplate<Calendar> = html`
                 part="navicon-up"
                 role="navigation"
                 aria-label="${x => (x.yearPickerOpen ? 'Next Decade' : 'Next Year')}"
-                aria-pressed="true"
                 tabindex="0"
                 @click="${x => x.handleSwitchSecondaryPanel('next')}"
-                @keydown="${(x, c) => x.handleNavIconKeydown(c.event as KeyboardEvent, 'secondary', 'next')}"
                 >${ArrowDown16}</fluent-button
               >
             </div>
@@ -295,11 +289,11 @@ export const template: ElementViewTemplate<Calendar> = html`
         <div class="footer" part="footer">
           <div
             class="${x => (x.isToday() ? 'slotted-link inactive' : 'slotted-link')}"
-            @click="${(x, c) => x.handleGoToToday()}"
+            @click="${(x, c) => x.goToToday()}"
             tabindex="0"
             @keydown="${(x, c) => x.handleLinkKeydown(c.event as KeyboardEvent)}"
           >
-            Go to today
+            ${slottedLinkText}
           </div>
         </div>
       </div>`,

@@ -74,7 +74,7 @@ export const FirstWeekOfYear = {
 export type FirstWeekOfYear = ValuesOf<typeof FirstWeekOfYear>;
 
 /**
- * Enum that defines when the first week of the year should start
+ * Enum that defines date navigation options. Used by the keydown handler.
  * @public
  */
 export const DateAdjustment = {
@@ -85,7 +85,7 @@ export const DateAdjustment = {
 } as const;
 
 /**
- * First week of the year can start on the first day, first full week, or first four day week
+ * Date navigation options. Used by the keydown handler.
  * @public
  */
 export type DateAdjustment = ValuesOf<typeof DateAdjustment>;

@@ -13,6 +13,9 @@ const ArrowDown16 = html.partial(`
 </svg>
 `);
 
+const decadePickerText = (decadeStart: number, decadeEnd: number) =>
+  `Range of years, ${decadeStart} to ${decadeEnd} selected. Switch to year picker.`;
+const yearPickerText = (year: number) => `Year picker, ${year} selected. Switch to decade picker.`;
 const slottedLinkText: string = 'Go to today';
 
 export function calendarTitleTemplate<T extends Calendar>(): ViewTemplate<T> {
@@ -41,11 +44,13 @@ export function calendarTitleTemplate<T extends Calendar>(): ViewTemplate<T> {
 export function calendarSecondaryPanelTitleTemplate<T extends Calendar>(): ViewTemplate<T> {
   const yearPickerTitle = html`
     <span
+      role="button"
       aria-live="polite"
       aria-label="${(x: T) =>
-        `Range of years, ${x.dateFormatter.getYear(x.getYearPickerInfo().decadeStart)} to ${x.dateFormatter.getYear(
-          x.getYearPickerInfo().decadeEnd,
-        )} selected`}"
+        decadePickerText(
+          parseInt(x.dateFormatter.getYear(x.getYearPickerInfo().decadeStart)),
+          parseInt(x.dateFormatter.getYear(x.getYearPickerInfo().decadeEnd)),
+        )}"
     ></span>
     <span
       >${(x: T) => x.dateFormatter.getYear(x.getYearPickerInfo().decadeStart)}-${(x: T) =>
@@ -55,8 +60,9 @@ export function calendarSecondaryPanelTitleTemplate<T extends Calendar>(): ViewT
 
   const monthPickerTitle = html`
     <span
+      role="button"
       aria-live="polite"
-      aria-label="${(x: T) => `Year picker, ${x.dateFormatter.getYear(x.getMonthPickerInfo().year)} selected`}"
+      aria-label="${(x: T) => yearPickerText(parseInt(x.dateFormatter.getYear(x.getMonthPickerInfo().year)))}"
     ></span>
     <span>${(x: T) => x.dateFormatter.getYear(x.getMonthPickerInfo().year)}</span>
   `;
@@ -68,10 +74,11 @@ export function calendarSecondaryPanelTitleTemplate<T extends Calendar>(): ViewT
       tabindex="0"
       aria-label="${(x: T) =>
         x.yearPickerOpen
-          ? `Range of years, ${x.dateFormatter.getYear(x.getYearPickerInfo().decadeStart)} to ${x.dateFormatter.getYear(
-              x.getYearPickerInfo().decadeEnd,
-            )} selected`
-          : `Year picker, ${x.dateFormatter.getYear(x.getMonthPickerInfo().year)} selected`}"
+          ? decadePickerText(
+              parseInt(x.dateFormatter.getYear(x.getYearPickerInfo().decadeStart)),
+              parseInt(x.dateFormatter.getYear(x.getYearPickerInfo().decadeEnd)),
+            )
+          : yearPickerText(parseInt(x.dateFormatter.getYear(x.getMonthPickerInfo().year)))}"
       role="button"
       @click=${x => x.toggleYearPicker()}
       @keydown=${(x, c) => x.handleSecondaryPanelTitleKeydown(c.event as KeyboardEvent)}
@@ -98,7 +105,7 @@ export function secondaryPanelCellTemplate(
   return html`
       <${cellTag}
           class="${(x, c) => c.parentContext.parent.getSecondaryPanelCellClassNames(x.detail, todayMonth, todayYear)}"
-          id="id-secondary-panel-cell"
+          id="id-secondary-panel-cell-${x => x.detail}"
           part="secondary-panel-cell"
           tabindex="-1"
           role="gridcell"
@@ -110,7 +117,7 @@ export function secondaryPanelCellTemplate(
       >
         <div
         class="secondary-panel-cell"
-        aria-labelledby="id-secondary-panel-cell">
+        aria-labelledby="id-secondary-panel-cell-${x => x.detail}">
           ${x => x.text}
         </div>
         <slot name="${x => x.detail}"></slot>

@@ -1,5 +1,5 @@
 import { attr, Updates } from '@microsoft/fast-element';
-import { CalendarDateInfo, FASTCalendar, WeekdayFormat } from '@microsoft/fast-foundation';
+import { CalendarDateInfo, FASTCalendar, WeekdayFormat, CalendarOptions } from '@microsoft/fast-foundation';
 import {
   keyArrowDown,
   keyArrowLeft,
@@ -216,6 +216,7 @@ export class Calendar extends FASTCalendar {
 
   public connectedCallback(): void {
     super.connectedCallback();
+    this.setGridAriaAttributes();
     this.addEventListener('dateselected', this.dateSelectedHandler);
     this.addEventListener('secondaryPanelCellSelected', this.secondaryCellSelectedHandler);
   }
@@ -262,6 +263,19 @@ export class Calendar extends FASTCalendar {
     //Emits an event when the selected dates attribute is updated
     if (name === 'selected-dates') {
       this.$emit('selectedDatesChanged');
+    }
+  }
+
+  private setGridAriaAttributes() {
+    const grid = this.shadowRoot?.querySelector('fast-data-grid');
+    const cells = this.shadowRoot?.querySelectorAll('fast-data-grid-cell');
+    if (grid) {
+      grid.setAttribute('role', 'grid');
+    }
+    if (cells) {
+      Array.from(cells).forEach(cell => {
+        cell.setAttribute('role', 'gridcell');
+      });
     }
   }
 
@@ -347,6 +361,7 @@ export class Calendar extends FASTCalendar {
 
     Updates.enqueue(() => {
       const el = this.getNavigatedDayElement();
+
       if (el) {
         el.focus();
       }
@@ -481,11 +496,15 @@ export class Calendar extends FASTCalendar {
   }
 
   /**
-   * Updates calendar to show today when user clicks on "Go to today"
+   * Updates calendar to show today when user clicks on "Go to today".
+   * Sets the navigated date to today's date,
+   * Sets focus on the current day,
+   * and updates the calendar view.
    * @param event - mouse event for clicking on the link
    */
   public goToToday() {
     const today: Date = new Date();
+    this.setNavigatedDate(today.getMonth() + 1, today.getDate(), today.getFullYear());
     this.handleSwitchMonth(today.getMonth() + 1, today.getFullYear());
     this.yearPickerOpen = false;
   }
@@ -494,6 +513,12 @@ export class Calendar extends FASTCalendar {
    * Handles selecting dates on the calendar's date view
    * Stores the selected dates in the selected-dates attribute
    * @param event - 'dateselected' event
+   * @remarks - The M-D-Y formatting is to align with how the attribute selected is added
+   * to the day cells in the base FAST component.
+   *
+   * While that format works internally for just checking a string against the selected
+   * dates string in the component class, the format isn't supported by Firefox, so that's
+   * why this uses the supported Y/M/D format for when the browser needs to interpret the navigated date.
    */
   public dateSelectedHandler(event: any) {
     const { day, month, year } = event.detail;
@@ -672,6 +697,14 @@ export class Calendar extends FASTCalendar {
       ?.parentElement as HTMLElement;
 
     return el;
+  }
+
+  /**
+   * Helper that sets the navigated cell element on the day grid.
+   * Used by goToToday() to set the navigated date.
+   */
+  public setNavigatedDate(month: number, day: number, year: number): void {
+    this.navigatedDate = new Date(`${year}/${month}/${day}`);
   }
 
   /**

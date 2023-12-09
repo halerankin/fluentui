@@ -1,5 +1,5 @@
 import { attr, Updates } from '@microsoft/fast-element';
-import { CalendarDateInfo, FASTCalendar, WeekdayFormat, CalendarOptions } from '@microsoft/fast-foundation';
+import { CalendarDateInfo, FASTCalendar, WeekdayFormat } from '@microsoft/fast-foundation';
 import {
   keyArrowDown,
   keyArrowLeft,
@@ -102,16 +102,6 @@ export class Calendar extends FASTCalendar {
    */
   @attr({ attribute: 'month-picker-overlay', mode: 'boolean' })
   public monthPickerOverlay?: boolean = false;
-
-  /**
-   * Show week numbers (1-53) before each week row
-   *
-   * @public
-   * @remarks
-   * HTML Attribute: show-week-numbers
-   */
-  @attr({ attribute: 'show-week-numbers', mode: 'boolean' })
-  public showWeekNumbers?: boolean = false;
 
   /**
    * The type of filter on the calendar
@@ -262,7 +252,7 @@ export class Calendar extends FASTCalendar {
 
     //Emits an event when the selected dates attribute is updated
     if (name === 'selected-dates') {
-      this.$emit('selectedDatesChanged');
+      this.$emit('selectedDatesChanged', this.selectedDates);
     }
   }
 
@@ -330,32 +320,32 @@ export class Calendar extends FASTCalendar {
    * @public
    */
   public handleSwitchMonth(month: number, year: number) {
-    // TODO: For range selection, instead of clearing out the selected dates,
-    // filter them by current month
+    const yearPickerInfo = this.getYearPickerInfo();
+    const isPastYear = year < this.year;
+    const isFutureYear = year > this.year;
+    const isSameYearPastMonth = year === this.year && month < this.month;
+    const isSameYearFutureMonth = year === this.year && month > this.month;
+    const isPastDecade = year < yearPickerInfo.decadeStart && this.yearPickerOpen;
+    const isFutureDecade = year > yearPickerInfo.decadeEnd && this.yearPickerOpen;
+    const isPastMonthPickerYear = year < this.monthPickerYear && !this.yearPickerOpen;
+    const isFutureMonthPickerYear = year > this.monthPickerYear && !this.yearPickerOpen;
 
     // Check which transition to use for the primary panel
-    if ((month < this.month && year == this.year) || year < this.year) {
+    if (isSameYearPastMonth || isPastYear) {
       this.setPrimaryPanelDirectionalCssClass('previous');
-    } else if ((month > this.month && year == this.year) || year > this.year) {
+    } else if (isSameYearFutureMonth || isFutureYear) {
       this.setPrimaryPanelDirectionalCssClass('next');
     }
 
     // Check which transition to use for the secondary panel
-    if (
-      (year < this.monthPickerYear && !this.yearPickerOpen) ||
-      (year < this.getYearPickerInfo().decadeStart && this.yearPickerOpen)
-    ) {
+    if (isPastMonthPickerYear || isPastDecade) {
       this.secondaryPanelTransition('previous');
-    } else if (
-      (year > this.monthPickerYear && !this.yearPickerOpen) ||
-      (year > this.getYearPickerInfo().decadeEnd && this.yearPickerOpen)
-    ) {
+    } else if (isFutureMonthPickerYear || isFutureDecade) {
       this.secondaryPanelTransition('next');
     }
 
     this.year = year;
     this.month = month;
-
     this.monthPickerYear = year;
     this.yearPickerDecade = year - (year % 10);
 
@@ -374,14 +364,17 @@ export class Calendar extends FASTCalendar {
    * @public
    */
   public handleSwitchSecondaryPanel(direction: string) {
+    const monthPickerInfo = this.getMonthPickerInfo();
+    const yearPickerInfo = this.getYearPickerInfo();
+
     if (direction === 'previous') {
       this.yearPickerOpen
-        ? (this.yearPickerDecade = this.getYearPickerInfo().previousStart)
-        : (this.monthPickerYear = this.getMonthPickerInfo().previous);
+        ? (this.yearPickerDecade = yearPickerInfo.previousStart)
+        : (this.monthPickerYear = monthPickerInfo.previous);
     } else if (direction === 'next') {
       this.yearPickerOpen
-        ? (this.yearPickerDecade = this.getYearPickerInfo().nextStart)
-        : (this.monthPickerYear = this.getMonthPickerInfo().next);
+        ? (this.yearPickerDecade = yearPickerInfo.nextStart)
+        : (this.monthPickerYear = monthPickerInfo.next);
     }
 
     this.secondaryPanelTransition(direction);
@@ -782,9 +775,9 @@ export class Calendar extends FASTCalendar {
 
     // Set focus on the cell corresponding to the updated index
     currentCell.tabIndex = -1;
-    const focus = this.secondaryPanelCells[index] as HTMLElement;
-    focus.tabIndex = 0;
-    focus.focus();
+    const elPanelCell = this.secondaryPanelCells[index] as HTMLElement;
+    elPanelCell.tabIndex = 0;
+    elPanelCell.focus();
 
     return true;
   }

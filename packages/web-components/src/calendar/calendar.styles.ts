@@ -13,7 +13,8 @@ import {
   colorNeutralForegroundDisabled,
   colorNeutralForegroundStaticInverted,
   colorTransparentBackground,
-  curveDecelerateMid,
+  curveDecelerateMax,
+  durationSlow,
   fontFamilyBase,
   fontSizeBase200,
   fontSizeBase300,
@@ -40,15 +41,17 @@ export const styles = css`
   :host .date-view {
     display: flex;
     flex-direction: column;
-    width: 248px;
+    width: 224px;
     color: ${colorNeutralForeground1};
     font: ${fontWeightRegular} ${fontSizeBase300} / ${lineHeightBase300} ${fontFamilyBase};
     border-radius: ${borderRadiusMedium};
     background-color: ${colorTransparentBackground};
+    margin-right: 14px;
   }
   :host .calendar-body {
-    margin: ${spacingVerticalS} ${spacingHorizontalM} ${spacingHorizontalM};
+    margin: 0 ${spacingHorizontalM} ${spacingHorizontalM};
     min-height: 192px;
+    width: 224px;
   }
   :host .calendar-container {
     min-height: 224px;
@@ -61,14 +64,14 @@ export const styles = css`
     flex-direction: column;
     justify-content: space-between;
     min-height: 215px;
-    width: 248px;
+    width: 224px;
     border-radius: ${borderRadiusMedium};
     font: ${fontWeightRegular} ${fontSizeBase300} / ${lineHeightBase300} ${fontFamilyBase};
     background-color: ${colorTransparentBackground};
   }
   :host .secondary-panel-body {
     height: 168px;
-    padding: ${spacingVerticalS} ${spacingHorizontalM} ${spacingVerticalM};
+    margin: 0 ${spacingHorizontalM} ${spacingHorizontalM};
   }
   :host .secondary-panel-container {
     display: flex;
@@ -84,6 +87,7 @@ export const styles = css`
   }
   :host .secondary-panel-title:hover {
     background-color: ${colorBrandBackgroundInvertedHover};
+    color: ${colorNeutralForeground1Static};
   }
   :host .secondary-panel-title {
     cursor: pointer;
@@ -101,8 +105,8 @@ export const styles = css`
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    height: 44px;
-    width: 44px;
+    height: 40px;
+    width: 40px;
     border-radius: ${borderRadiusMedium};
     box-sizing: border-box;
   }
@@ -221,14 +225,14 @@ export const styles = css`
     border-radius: ${borderRadiusMedium};
   }
   :host .header {
-    width: 248px;
+    width: 224px;
     height: 41px;
     box-sizing: border-box;
     display: flex;
     justify-content: space-between;
     align-items: center;
     column-gap: ${spacingHorizontalNone};
-    padding: ${spacingHorizontalS} ${spacingHorizontalM};
+    margin: ${spacingHorizontalS} ${spacingHorizontalM} 0;
   }
   :host .slotted-link {
     visibility: hidden;
@@ -251,25 +255,25 @@ export const styles = css`
   }
   :host .first-transition-row-animated {
     animation: FadeOut, SlideUpOut20, transitionRowDisappearance;
-    animation-duration: 0.367s;
-    animation-timing-function: ${curveDecelerateMid};
+    animation-duration: ${durationSlow};
+    animation-timing-function: ${curveDecelerateMax};
   }
   :host .last-transition-row-animated {
     animation: FadeOut, SlideDownOut20, transitionRowDisappearance;
-    animation-duration: 0.367s;
-    animation-timing-function: ${curveDecelerateMid};
+    animation-duration: ${durationSlow};
+    animation-timing-function: ${curveDecelerateMax};
   }
   :host .week.animated-up,
   .secondary-panel-row.animated-up {
     animation: FadeIn, SlideUpIn20;
-    animation-duration: 0.367s;
-    animation-timing-function: ${curveDecelerateMid};
+    animation-duration: ${durationSlow};
+    animation-timing-function: ${curveDecelerateMax};
   }
   :host .week.animated-down,
   .secondary-panel-row.animated-down {
     animation: FadeIn, SlideDownIn20;
-    animation-duration: 0.367s;
-    animation-timing-function: ${curveDecelerateMid};
+    animation-duration: ${durationSlow};
+    animation-timing-function: ${curveDecelerateMax};
   }
 
   @keyframes FadeOut {
@@ -380,26 +384,26 @@ export const styles = css`
       box-sizing: border-box;
     }
     :host .secondary-panel-today {
-      height: 44px;
-      width: 44px;
+      height: 40px;
+      width: 40px;
       border: ${strokeWidthThick} solid Mark;
       box-sizing: border-box;
     }
     :host .secondary-panel-cell-outer:not(.secondary-panel-today):not(.secondary-panel-selected):hover {
-      height: 44px;
-      width: 44px;
+      height: 40px;
+      width: 40px;
       border: ${strokeWidthThick} solid Highlight;
       box-sizing: border-box;
     }
     :host .secondary-panel-selected {
-      height: 44px;
-      width: 44px;
+      height: 40px;
+      width: 40px;
       border: ${strokeWidthThick} solid Highlight;
       box-sizing: border-box;
     }
     :host .secondary-panel-cell-outer:not(.secondary-panel-today):not(.secondary-panel-selected):active {
-      height: 44px;
-      width: 44px;
+      height: 40px;
+      width: 40px;
       border: ${strokeWidthThick} solid Highlight;
       color: Highlight;
       box-sizing: border-box;
@@ -407,9 +411,11 @@ export const styles = css`
     :host([show-slotted-link]) .slotted-link.inactive {
       color: GrayText;
     }
+    :host .secondary-panel-title {
+      border: ${strokeWidthThick} solid Canvas;
+    }
     :host .secondary-panel-title:hover {
-      border: ${strokeWidthThick} solid Highlight;
-      box-sizing: border-box;
+      border-color: Highlight;
     }
   `),
 );

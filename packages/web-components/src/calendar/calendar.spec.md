@@ -2,11 +2,13 @@
 
 ## Component Description
 
-The Calendar lets users view and select a single date or a range of dates. The calendar has five different views: date, month, week, year, and range-picker.
+The Calendar lets users view and select a single date or a range of dates*. The calendar has five different views: date, month, week, year, and range-picker*.
+
+\*V.2 will include the range-picker feature.
 
 ### Calendar vs. Date Picker Implementation
 
-The calendar and the date picker have significant overlap in inputs, outputs, and events. The difference is that the date picker is essentially a calendar combined with an input field, in which the input field can can interact with the calendar by opening and closing the calendar and displaying/modifying the selected dates of the calendar. It is important to note that the calendar is the component that stores the selected dates, which is then exposed to the date picker.
+The calendar and the date picker have significant overlap in inputs, outputs, and events. The difference is that the date picker is essentially a calendar combined with an input field, in which the input field can interact with the calendar by opening and closing the calendar and displaying/modifying the selected dates of the calendar. It is important to note that the calendar is the component that stores the selected dates, which is then exposed to the date picker.
 
 ## Design Spec
 
@@ -24,23 +26,22 @@ Due to the incomplete nature of the v9 calendar design spec, work on the compone
 | -------------------------- | ------------------------------------------------------------ | ----------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | `calendar-type`            | "date" \| "month" \| "week" \| "year" \| "range-picker"      | "date"            | The type of the calendar                                                                                                          |
 | `month-picker-visible`     | boolean                                                      | `true`            | Whether the month picker is shown beside the day picker or hidden                                                                 |
-| `month-picker-overlay`     | boolean                                                      | -                 | If true, show month picker on top of date picker when visible                                                                     |
-| `week-numbers`             | boolean                                                      | -                 | If true, show week numbers (1-53) before each week row                                                                            |
-| `min-weeks`                | number                                                       | -                 | Minimum number of weeks shown in a month                                                                                          |
-| `calendar-filter`          | "week" \| "work-week" \| "four" \| "three" \| "two" \| "one" | -                 | Allow user to view selected date with a range filter                                                                              |
+| `month-picker-overlay`     | boolean                                                      | -                 | ! Date Picker: If true, show month picker on top of date picker when visible                                                      |
+| `min-weeks`                | number                                                       | -                 | ! Not implemented. Check Fluent spec. Minimum number of weeks shown in a month                                                    |
+| `calendar-filter`          | "week" \| "work-week" \| "four" \| "three" \| "two" \| "one" | -                 | ! Range Picker. Not fully implemented. Allow user to view selected date with a range filter                                       |
 | `work-week`                | `[0, 1, 2, 3, 4, 5, 6]`                                      | `[1, 2, 3, 4, 5]` | The days that are selectable with the filter `work-week`. If the filter is not set to `work-week`, this does nothing.             |
 | `first-day-of-week`        | `0, 1, 2, 3, 4, 5, 6`                                        | `0`               | The first day of the week for locale                                                                                              |
 | `first-week-of-year`       | `0, 1, 2`                                                    | `0`               | Enum that defines when the first week of the year should start: first day (`0`), first full week (`1`), first four day week (`2`) |
-| `min-date`                 | string                                                       | -                 | The minimum allowable date                                                                                                        |
-| `max-date`                 | string                                                       | -                 | The maximum allowable date                                                                                                        |
+| `min-date`                 | string                                                       | -                 | ! Date Boundaries. Not implemented. The minimum allowable date                                                                    |
+| `max-date`                 | string                                                       | -                 | ! Date Boundaries. Not implemented. The maximum allowable date                                                                    |
 | `show-slotted-link`        | boolean                                                      | `true`            | If false, link at link slot is hidden                                                                                             |
 | `highlight-current-month`  | boolean                                                      | -                 | if true, the month picker should highlight the current month                                                                      |
 | `highlight-selected-month` | boolean                                                      | -                 | If true, the month picker should highlight the selected month                                                                     |
-| `selected-dates`           | string[]                                                     | -                 | selected dates                                                                                                                    |
+| `selected-dates`           | string[]                                                     | -                 | ! Range Picker. Not implemented. selected dates                                                                                   |
 
 ### Outputs
 
-- [selectedDates: string] - the selected dates from the calendar
+- [selectedDates: string] - the selected dates from the calendar. This will be for Range Picker. Not yet implemented.
 
 ### Events
 
@@ -58,38 +59,51 @@ Note that the `default` slot does not contain any customizable content.
 
 ### CSS Variables
 
-- `colorNeutralBackground1`
-- `colorNeutralBackground4`
-- `colorNeutralForeground2`
-- `colorNeutralForeground3`
-- `colorNeutralForegroundInverted`
-- `colorNeutralForegroundDisabled`
-- `colorBrandBackground`
-- `colorBrandBackground2`
-- `colorCompoundBrandBackground`
-- `colorBrandStroke1`
-- `colorBrandStroke2`
-- `spacingHorizontalM`
-- `spacingHorizontalS`
-- `spacingVerticalXS`
-- `spacingVerticalS`
-- `spacingVerticalM`
+- `borderRadiusMedium`,
+- `colorBrandBackground`,
+- `colorBrandBackgroundInvertedHover`,
+- `colorBrandBackgroundInvertedSelected`,
+- `colorNeutralForeground1`,
+- `colorNeutralForeground1Static`,
+- `colorNeutralForeground2Selected`,
+- `colorNeutralForeground3`,
+- `colorNeutralForeground4`,
+- `colorNeutralForegroundDisabled`,
+- `colorNeutralForegroundStaticInverted`,
+- `colorTransparentBackground`,
+- `curveDecelerateMax`,
+- `durationSlow`,
+- `fontFamilyBase`,
+- `fontSizeBase200`,
+- `fontSizeBase300`,
+- `fontWeightBold`,
+- `fontWeightRegular`,
+- `lineHeightBase200`,
+- `lineHeightBase300`,
+- `lineHeightBase600`,
+- `spacingHorizontalM`,
+- `spacingHorizontalNone`,
+- `spacingHorizontalS`,
+- `spacingVerticalM`,
+- `spacingVerticalNone`,
+- `spacingVerticalS`,
+- `spacingVerticalXS`,
+- `strokeWidthThick`,
 
 ## Accessibility
 
-- [ ] Find the matching component through [WCAG's patterns](https://www.w3.org/WAI/ARIA/apg/patterns/)
+- [x] Find the matching component through [WCAG's patterns](https://www.w3.org/WAI/ARIA/apg/patterns/)
   - [Date Picker Combobox Example](https://www.w3.org/WAI/ARIA/apg/patterns/combobox/examples/combobox-datepicker/)
-- [ ] Are there any accessibility elements unique to this component?
-- [ ] List ARIA attributes: `role, aria-labelledby, aria-label, aria-pressed, aria-selected, aria-live`
-- [ ] Does the component support 400% zoom?
-- [ ] What keyboard behaviors does the component support?
-  - [ ] Arrows - Moves focus according to the grid behavior
-  - [ ] Enter - Select the date
-  - [ ] Home - Moves focus to the first day (e.g. Sunday) of the current week
-  - [ ] End - Moves focus to the last day (e.g. Satuday) of the current week
-  - [ ] Page Up - Changes the grid of dates to the previous month
+- [x] ARIA attributes: `role, aria-labelledby, aria-label, aria-selected, aria-live`
+- [x] Component supports 400% zoom.
+- [x] What keyboard behaviors does the component support?
+  - [x] Arrows - Moves focus according to the grid behavior
+  - [x] Enter - Select the date
+  - [x] Home - Moves focus to the first day (e.g. Sunday) of the current week
+  - [x] End - Moves focus to the last day (e.g. Satuday) of the current week
+  - [x] Page Up - Changes the grid of dates to the previous month
   - [ ] Shift + Page Up - Changes the grid of dates to the previous year
-  - [ ] Page Down - Changes the grid of dates to the next month
+  - [x] Page Down - Changes the grid of dates to the next month
   - [ ] Shift + Page Down - Changes the grid of dates to the next year
 
 ## Preparation
@@ -104,7 +118,7 @@ Note that the `default` slot does not contain any customizable content.
   Differences
 
   - The Calendar component in Fluent React v8 handles picking a range of dates differently from the v9 Date Picker component. The v9 Calendar should handle date ranges in the same way as the v9 Date Picker.
-  - Fluent UI has a Close button for the calendar, but the v9 Date Picker design spec does not
+  - Fluent UI has a Close button for the calendar, but the v9 Date Picker design spec does not.
 
 - [x] [Fluent UI React V9 Storybook](https://aka.ms/fluentui-storybook) for implementation differences and document:
 
@@ -117,10 +131,9 @@ Note that the `default` slot does not contain any customizable content.
 
 - [ ] Initial conformance and unit tests (validate basic functionality)
 - [ ] [Initial documentation](https://github.com/microsoft/fluentui/wiki/Component-Implementation-Guide#documentation)
-  - [ ] [Storybook stories](https://github.com/microsoft/fluentui/wiki/Component-Implementation-Guide#storybook-stories)
+  - [x] [Storybook stories](https://github.com/microsoft/fluentui/wiki/Component-Implementation-Guide#storybook-stories)
   - [ ] README.md covering basic usage
-- [ ] Uses design tokens for styling
-- [ ] Renders correctly in High Contrast mode
+- [x] Renders correctly in High Contrast mode
 
 ## Validation
 

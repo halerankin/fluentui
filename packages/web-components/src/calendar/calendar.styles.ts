@@ -26,7 +26,6 @@ import {
   spacingHorizontalM,
   spacingHorizontalNone,
   spacingHorizontalS,
-  spacingVerticalM,
   spacingVerticalNone,
   spacingVerticalS,
   spacingVerticalXS,

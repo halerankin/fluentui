@@ -1,5 +1,5 @@
-import { attr, Updates } from '@microsoft/fast-element';
-import { CalendarDateInfo, FASTCalendar, WeekdayFormat } from '@microsoft/fast-foundation';
+import { attr, observable, Updates } from '@microsoft/fast-element';
+import { CalendarDateInfo, FASTCalendar, MonthInfo, WeekdayFormat } from '@microsoft/fast-foundation';
 import {
   keyArrowDown,
   keyArrowLeft,
@@ -49,7 +49,6 @@ export type MonthPickerInfo = {
   previous: number;
   next: number;
 };
-
 /**
  * Year picker information needed for rendering
  * including the next and previous decade's start years
@@ -194,6 +193,38 @@ export class Calendar extends FASTCalendar {
   @attr public yearPickerOpen: boolean = false;
 
   /**
+   * Optional, minimum allowed date.
+   * YYYY-mm-dd format
+   */
+  @observable
+  // @attr({ attribute: 'min-date' })
+  public minDate: string = '1900-01-01'; // Assuming local time zone;
+  /**
+   * Optional, maximum allowed date.
+   *  YYYY-mm-dd format
+   */
+  @observable
+  // @attr({ attribute: 'max-date' })
+  public maxDate: string = '9000-01-01'; // Assuming local time zone;
+
+  public minDateChanged(oldValue: string, newValue: string) {
+    console.log('minDate CALLED');
+
+    if (newValue !== oldValue) {
+      console.log(`minDate changed from ${oldValue} to ${newValue}`);
+      // minDate changed from undefined to
+    }
+  }
+
+  public maxDateChanged(oldValue: string, newValue: string) {
+    console.log(`maxDate CALLED`);
+
+    if (newValue !== oldValue) {
+      console.log(`maxDate changed from ${oldValue} to ${newValue}`);
+    }
+  }
+
+  /**
    * keeps track of the current focused and active date on the day grid
    */
   protected navigatedDate: Date = new Date(`${this.year}/${this.month}/01`);
@@ -209,6 +240,7 @@ export class Calendar extends FASTCalendar {
     this.setGridAriaAttributes();
     this.addEventListener('dateselected', this.dateSelectedHandler);
     this.addEventListener('secondaryPanelCellSelected', this.secondaryCellSelectedHandler);
+    console.log('min/max: ', this.minDate, this.maxDate);
   }
 
   public disconnectedCallback() {
@@ -263,6 +295,7 @@ export class Calendar extends FASTCalendar {
       grid.setAttribute('role', 'grid');
     }
     if (cells) {
+      // TODO: Add aria-disalbed="true" when a cell is disabled.
       Array.from(cells).forEach(cell => {
         cell.setAttribute('role', 'gridcell');
       });
@@ -387,6 +420,44 @@ export class Calendar extends FASTCalendar {
   public toggleYearPicker() {
     this.yearPickerOpen = !this.yearPickerOpen;
     this.yearPickerDecade = this.monthPickerYear - (this.monthPickerYear % 10);
+  }
+
+  getMinDate(): string {
+    return this.minDate;
+  }
+
+  isMonthDisabled(monthInfo: MonthInfo): boolean {
+    console.log('minDate inside isMonthDisabled: ', this.minDate);
+    if (this.minDate) {
+      const startDate = new Date(monthInfo.year, monthInfo.month - 1, 1);
+      const endDate = new Date(monthInfo.year, monthInfo.month, 0); // Last day of the month
+      const minDate = new Date(this.minDate);
+
+      // Check if maxDate is defined before comparing
+      const isEndDateAfterMax = this.maxDate ? endDate > new Date(this.maxDate) : false;
+
+      // A month is disabled if it ends before minDate or starts after maxDate
+      return startDate < minDate || isEndDateAfterMax;
+    }
+    return false;
+  }
+
+  isYearDisabled(monthInfo: MonthInfo): boolean {
+    console.log('minDate inside isYearDisabled: ', this.minDate);
+
+    if (this.minDate && this.maxDate) {
+      // Start of the year - January 1st
+      const yearStartDate = new Date(monthInfo.year, 0, 1);
+      // End of the year - December 31st
+      const yearEndDate = new Date(monthInfo.year, 11, 31);
+
+      const minDate = new Date(this.minDate);
+      const maxDate = new Date(this.maxDate);
+
+      // Check if the year is outside the range
+      return yearStartDate < minDate || yearEndDate > maxDate;
+    }
+    return false;
   }
 
   /**

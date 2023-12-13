@@ -1,4 +1,4 @@
-import { ElementViewTemplate, html, repeat, ViewTemplate, when } from '@microsoft/fast-element';
+import { ElementViewTemplate, html, ref, repeat, ViewTemplate, when } from '@microsoft/fast-element';
 import { CalendarOptions, calendarTemplate, tagFor } from '@microsoft/fast-foundation';
 import type { Calendar } from './calendar.js';
 
@@ -104,7 +104,21 @@ export function secondaryPanelCellTemplate(
   const cellTag = html.partial(tagFor(options.dataGridCell));
   return html`
       <${cellTag}
-          class="${(x, c) => c.parentContext.parent.getSecondaryPanelCellClassNames(x.detail, todayMonth, todayYear)}"
+          class="${(x, c) => {
+            const parent = c.parentContext.parent;
+            let isDisabled = false;
+            if (parent.yearPickerOpen) {
+              // Use isYearDisabled for year picker
+              isDisabled = parent.isYearDisabled({ year: x.detail, month: 1 }); // Assuming month is not relevant for year
+            } else {
+              // Use isMonthDisabled for month picker
+              isDisabled = parent.isMonthDisabled({ year: parent.year, month: x.detail });
+            }
+
+            return (
+              parent.getSecondaryPanelCellClassNames(x.detail, todayMonth, todayYear) + (isDisabled ? ' disabled' : '')
+            );
+          }}"
           id="id-secondary-panel-cell-${x => x.detail}"
           part="secondary-panel-cell"
           tabindex="-1"
@@ -114,6 +128,12 @@ export function secondaryPanelCellTemplate(
           aria-selected="${(x, c) => c.parentContext.parent.getSecondaryPanelCellSelected(x.detail)}"
           @click="${(x, c) => c.parentContext.parent.$emit('secondaryPanelCellSelected', x.detail)}"
           @keydown="${(x, c) => c.parentContext.parent.handleSecondaryPanelKeydown(c.event as KeyboardEvent, x.detail)}"
+          ?disabled="${(x, c) => {
+            const parent = c.parentContext.parent;
+            return parent.yearPickerOpen
+              ? parent.isYearDisabled({ year: x.detail, month: 1 })
+              : parent.isMonthDisabled({ year: parent.year, month: x.detail });
+          }}"
       >
         <div
         class="secondary-panel-cell"
@@ -202,64 +222,12 @@ export function secondaryPanelTemplate<T extends Calendar>(options: CalendarOpti
  * @public
  */
 export const template: ElementViewTemplate<Calendar> = html`
-  <div class="control" @keydown=${(x, c) => x.handleControlKeydown(c.event as KeyboardEvent)}>
-    <div class="date-view">
-      <div class="calendar-container">
-        <div class="header">
-          ${calendarTitleTemplate()}
-          <div class="navicon-container">
-            <fluent-button
-              size="small"
-              appearance="subtle"
-              icon-only
-              part="navicon-up"
-              role="navigation"
-              aria-label="Previous Month"
-              tabindex="0"
-              @click="${x => x.handleSwitchMonth(x.getMonthInfo().previous.month, x.getMonthInfo().previous.year)}"
-              >${ArrowUp16}</fluent-button
-            >
-            <fluent-button
-              size="small"
-              appearance="subtle"
-              icon-only
-              part="navicon-up"
-              role="navigation"
-              aria-label="Next Month"
-              tabindex="0"
-              @click="${x => x.handleSwitchMonth(x.getMonthInfo().next.month, x.getMonthInfo().next.year)}"
-              >${ArrowDown16}</fluent-button
-            >
-          </div>
-        </div>
-        <div class="calendar-body" part="calendar-body">
-          ${calendarTemplate({
-            dataGrid: 'fast-data-grid',
-            dataGridRow: 'fast-data-grid-row',
-            dataGridCell: 'fast-data-grid-cell',
-          })}
-        </div>
-      </div>
-      ${when(
-        x => !x.hasAttribute('monthPickerVisible'),
-        html` <div class="footer" part="footer">
-          <div
-            class=${x => (x.isToday() ? 'slotted-link inactive' : 'slotted-link')}
-            tabindex="0"
-            @click="${(x, c) => x.goToToday()}"
-            @keydown="${(x, c) => x.handleLinkKeydown(c.event as KeyboardEvent)}"
-          >
-            ${slottedLinkText}
-          </div>
-        </div>`,
-      )}
-    </div>
-    ${when(
-      x => x.hasAttribute('monthPickerVisible'),
-      html`<div class="secondary-panel">
-        <div class="secondary-panel-container">
+  <template min-date="${x => x.minDate}" max-date="${x => x.maxDate}">
+    <div class="control" @keydown=${(x, c) => x.handleControlKeydown(c.event as KeyboardEvent)}>
+      <div class="date-view">
+        <div class="calendar-container">
           <div class="header">
-            ${x => calendarSecondaryPanelTitleTemplate()}
+            ${calendarTitleTemplate()}
             <div class="navicon-container">
               <fluent-button
                 size="small"
@@ -267,9 +235,9 @@ export const template: ElementViewTemplate<Calendar> = html`
                 icon-only
                 part="navicon-up"
                 role="navigation"
-                aria-label="${x => (x.yearPickerOpen ? 'Previous Decade' : 'Previous Year')}"
+                aria-label="Previous Month"
                 tabindex="0"
-                @click="${x => x.handleSwitchSecondaryPanel('previous')}"
+                @click="${x => x.handleSwitchMonth(x.getMonthInfo().previous.month, x.getMonthInfo().previous.year)}"
                 >${ArrowUp16}</fluent-button
               >
               <fluent-button
@@ -278,32 +246,86 @@ export const template: ElementViewTemplate<Calendar> = html`
                 icon-only
                 part="navicon-up"
                 role="navigation"
-                aria-label="${x => (x.yearPickerOpen ? 'Next Decade' : 'Next Year')}"
+                aria-label="Next Month"
                 tabindex="0"
-                @click="${x => x.handleSwitchSecondaryPanel('next')}"
+                @click="${x => x.handleSwitchMonth(x.getMonthInfo().next.month, x.getMonthInfo().next.year)}"
                 >${ArrowDown16}</fluent-button
               >
             </div>
           </div>
-          <div class="secondary-panel-body">
-            ${secondaryPanelTemplate({
+          <div class="calendar-body" part="calendar-body">
+            ${calendarTemplate({
               dataGrid: 'fast-data-grid',
               dataGridRow: 'fast-data-grid-row',
               dataGridCell: 'fast-data-grid-cell',
             })}
           </div>
         </div>
-        <div class="footer" part="footer">
-          <div
-            class="${x => (x.isToday() ? 'slotted-link inactive' : 'slotted-link')}"
-            @click="${(x, c) => x.goToToday()}"
-            tabindex="0"
-            @keydown="${(x, c) => x.handleLinkKeydown(c.event as KeyboardEvent)}"
-          >
-            ${slottedLinkText}
+        ${when(
+          x => !x.hasAttribute('monthPickerVisible'),
+          html` <div class="footer" part="footer">
+            <div
+              class=${x => (x.isToday() ? 'slotted-link inactive' : 'slotted-link')}
+              tabindex="0"
+              @click="${(x, c) => x.goToToday()}"
+              @keydown="${(x, c) => x.handleLinkKeydown(c.event as KeyboardEvent)}"
+            >
+              ${slottedLinkText}
+            </div>
+          </div>`,
+        )}
+      </div>
+      ${when(
+        x => x.hasAttribute('monthPickerVisible'),
+        html`<div class="secondary-panel">
+          <div class="secondary-panel-container">
+            <div class="header">
+              ${x => calendarSecondaryPanelTitleTemplate()}
+              <div class="navicon-container">
+                <fluent-button
+                  size="small"
+                  appearance="subtle"
+                  icon-only
+                  part="navicon-up"
+                  role="navigation"
+                  aria-label="${x => (x.yearPickerOpen ? 'Previous Decade' : 'Previous Year')}"
+                  tabindex="0"
+                  @click="${x => x.handleSwitchSecondaryPanel('previous')}"
+                  >${ArrowUp16}</fluent-button
+                >
+                <fluent-button
+                  size="small"
+                  appearance="subtle"
+                  icon-only
+                  part="navicon-up"
+                  role="navigation"
+                  aria-label="${x => (x.yearPickerOpen ? 'Next Decade' : 'Next Year')}"
+                  tabindex="0"
+                  @click="${x => x.handleSwitchSecondaryPanel('next')}"
+                  >${ArrowDown16}</fluent-button
+                >
+              </div>
+            </div>
+            <div class="secondary-panel-body">
+              ${secondaryPanelTemplate({
+                dataGrid: 'fast-data-grid',
+                dataGridRow: 'fast-data-grid-row',
+                dataGridCell: 'fast-data-grid-cell',
+              })}
+            </div>
           </div>
-        </div>
-      </div>`,
-    )}
-  </div>
+          <div class="footer" part="footer">
+            <div
+              class="${x => (x.isToday() ? 'slotted-link inactive' : 'slotted-link')}"
+              @click="${(x, c) => x.goToToday()}"
+              tabindex="0"
+              @keydown="${(x, c) => x.handleLinkKeydown(c.event as KeyboardEvent)}"
+            >
+              ${slottedLinkText}
+            </div>
+          </div>
+        </div>`,
+      )}
+    </div>
+  </template>
 `;

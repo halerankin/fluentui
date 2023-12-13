@@ -1,4 +1,4 @@
-import { Updates, html } from '@microsoft/fast-element';
+import { html, Updates } from '@microsoft/fast-element';
 import type { Args, Meta } from '@storybook/html';
 import { renderComponent } from '../helpers.stories.js';
 import { fontFamilyBase, fontSizeBase300, fontWeightRegular, lineHeightBase300 } from '../theme/design-tokens.js';
@@ -31,9 +31,6 @@ const storyTemplate = html<CalendarStoryArgs>`
     ${x => x.logSelectedDates()};
   </script>
   <style>
-    div.docs-story > div:first-child {
-      height: 295px;
-    }
     .selected-dates-container {
       font: ${fontWeightRegular} ${fontSizeBase300} / ${lineHeightBase300} ${fontFamilyBase};
       margin-bottom: 10px;
@@ -62,3 +59,14 @@ export default {
 } as CalendarStoryMeta;
 
 export const Calendar = renderComponent(storyTemplate).bind({});
+
+export const DateBoundaries = renderComponent(html<FluentCalendar>`
+  <fluent-calendar
+    class="date-boundaries"
+    min-date="2023-02-02"
+    max-date="2025-01-01"
+    show-slotted-link="true"
+    monthPickerVisible="true"
+  >
+  </fluent-calendar>
+`);

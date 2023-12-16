@@ -43,6 +43,8 @@ const storyTemplate = html<CalendarStoryArgs>`
     ?highlightCurrentMonth=${x => x.highlightCurrentMonth}
     ?monthPickerVisible=${x => x.monthPickerVisible}
     ?highlightSelectedMonth=${x => x.highlightSelectedMonth}
+    min-date=${x => x.minDate}
+    max-date=${x => x.maxDate}
   >
   </fluent-calendar>
 `;
@@ -55,18 +57,9 @@ export default {
     highlightCurrentMonth: false,
     monthPickerVisible: true,
     highlightSelectedMonth: false,
+    minDate: '2023-02-02',
+    maxDate: '2025-01-01',
   },
 } as CalendarStoryMeta;
 
 export const Calendar = renderComponent(storyTemplate).bind({});
-
-export const DateBoundaries = renderComponent(html<FluentCalendar>`
-  <fluent-calendar
-    class="date-boundaries"
-    min-date="2023-02-02"
-    max-date="2025-01-01"
-    show-slotted-link="true"
-    monthPickerVisible="true"
-  >
-  </fluent-calendar>
-`);

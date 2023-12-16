@@ -196,32 +196,33 @@ export class Calendar extends FASTCalendar {
    * Optional, minimum allowed date.
    * YYYY-mm-dd format
    */
+  @attr({ attribute: 'min-date' })
   @observable
-  // @attr({ attribute: 'min-date' })
-  public minDate: string = '1900-01-01'; // Assuming local time zone;
+  public minDate: string = 'initial';
   /**
    * Optional, maximum allowed date.
    *  YYYY-mm-dd format
    */
+  @attr({ attribute: 'max-date' })
   @observable
-  // @attr({ attribute: 'max-date' })
-  public maxDate: string = '9000-01-01'; // Assuming local time zone;
+  public maxDate: string = 'initial';
 
   public minDateChanged(oldValue: string, newValue: string) {
-    console.log('minDate CALLED');
+    // console.log('minDateChanged BEFORE compare: ', { oldValue, newValue });
 
     if (newValue !== oldValue) {
-      console.log(`minDate changed from ${oldValue} to ${newValue}`);
-      // minDate changed from undefined to
+      console.log('minDateChanged: ', { oldValue, newValue });
     }
   }
 
   public maxDateChanged(oldValue: string, newValue: string) {
-    console.log(`maxDate CALLED`);
-
     if (newValue !== oldValue) {
-      console.log(`maxDate changed from ${oldValue} to ${newValue}`);
+      // console.log('maxDateChanged CALLED', { oldValue, newValue });
     }
+  }
+
+  static get observedAttributes() {
+    return ['min-date', 'max-date'];
   }
 
   /**
@@ -237,10 +238,12 @@ export class Calendar extends FASTCalendar {
 
   public connectedCallback(): void {
     super.connectedCallback();
+    this.minDate = this.getAttribute('min-date') || this.minDate;
+    this.maxDate = this.getAttribute('max-date') || this.maxDate;
     this.setGridAriaAttributes();
     this.addEventListener('dateselected', this.dateSelectedHandler);
     this.addEventListener('secondaryPanelCellSelected', this.secondaryCellSelectedHandler);
-    console.log('min/max: ', this.minDate, this.maxDate);
+    // console.log('min/max: ', this.minDate, this.maxDate);
   }
 
   public disconnectedCallback() {
@@ -249,7 +252,7 @@ export class Calendar extends FASTCalendar {
     super.disconnectedCallback();
   }
 
-  public attributeChangedCallback(name: string) {
+  public attributeChangedCallback(name: string, oldValue: string, newValue: string) {
     // Sets focus on day grid cell when the month is updated on the day grid
     if (name === 'month') {
       if (this.navigatedDate.getMonth() + 1 != this.month || this.navigatedDate.getFullYear() != this.year) {
@@ -285,6 +288,14 @@ export class Calendar extends FASTCalendar {
     //Emits an event when the selected dates attribute is updated
     if (name === 'selected-dates') {
       this.$emit('selectedDatesChanged', this.selectedDates);
+    }
+
+    if (name === 'min-date') {
+      this.minDateChanged(oldValue, newValue);
+    }
+
+    if (name === 'max-date') {
+      this.maxDateChanged(oldValue, newValue);
     }
   }
 
@@ -422,13 +433,9 @@ export class Calendar extends FASTCalendar {
     this.yearPickerDecade = this.monthPickerYear - (this.monthPickerYear % 10);
   }
 
-  getMinDate(): string {
-    return this.minDate;
-  }
-
   isMonthDisabled(monthInfo: MonthInfo): boolean {
-    console.log('minDate inside isMonthDisabled: ', this.minDate);
-    if (this.minDate) {
+    if (this.minDate && this.maxDate) {
+      // console.log('isMonthDisabled CALLED', { minDate: this.minDate, maxDate: this.maxDate });
       const startDate = new Date(monthInfo.year, monthInfo.month - 1, 1);
       const endDate = new Date(monthInfo.year, monthInfo.month, 0); // Last day of the month
       const minDate = new Date(this.minDate);
@@ -443,8 +450,6 @@ export class Calendar extends FASTCalendar {
   }
 
   isYearDisabled(monthInfo: MonthInfo): boolean {
-    console.log('minDate inside isYearDisabled: ', this.minDate);
-
     if (this.minDate && this.maxDate) {
       // Start of the year - January 1st
       const yearStartDate = new Date(monthInfo.year, 0, 1);

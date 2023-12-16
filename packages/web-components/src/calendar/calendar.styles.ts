@@ -34,6 +34,9 @@ import {
 
 export const styles = css`
   ${display('inline-flex')}
+  :host fast-data-grid-cell[disabled] {
+    color: red;
+  }
   :host .control {
     display: flex;
   }

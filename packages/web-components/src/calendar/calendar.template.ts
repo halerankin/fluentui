@@ -1,5 +1,5 @@
-import { ElementViewTemplate, html, ref, repeat, ViewTemplate, when } from '@microsoft/fast-element';
-import { CalendarOptions, calendarTemplate, tagFor } from '@microsoft/fast-foundation';
+import { ElementViewTemplate, html, repeat, ViewTemplate } from '@microsoft/fast-element';
+import { CalendarDateInfo, CalendarOptions, calendarTemplate, MonthInfo, tagFor } from '@microsoft/fast-foundation';
 import type { Calendar } from './calendar.js';
 
 const ArrowUp16 = html.partial(`
@@ -102,46 +102,39 @@ export function secondaryPanelCellTemplate(
   todayYear: number,
 ): ViewTemplate {
   const cellTag = html.partial(tagFor(options.dataGridCell));
-  return html`
-      <${cellTag}
-          class="${(x, c) => {
-            const parent = c.parentContext.parent;
-            let isDisabled = false;
-            if (parent.yearPickerOpen) {
-              // Use isYearDisabled for year picker
-              isDisabled = parent.isYearDisabled({ year: x.detail, month: 1 }); // Assuming month is not relevant for year
-            } else {
-              // Use isMonthDisabled for month picker
-              isDisabled = parent.isMonthDisabled({ year: parent.year, month: x.detail });
-            }
 
-            return (
-              parent.getSecondaryPanelCellClassNames(x.detail, todayMonth, todayYear) + (isDisabled ? ' disabled' : '')
-            );
-          }}"
+  return html`
+    ${(x, c) => {
+      const parent = c.parentContext.parent;
+
+      const dateInfo = parent.yearPickerOpen ? { year: x.detail, month: 1 } : { year: parent.year, month: x.detail };
+      const checkType: string = parent.yearPickerOpen ? 'year' : 'month';
+      const isDisabled: boolean = parent.isDateDisabled(dateInfo, checkType, parent.minDate, parent.maxDate);
+
+      return html`
+        <${cellTag}
+          class="${parent.getSecondaryPanelCellClassNames(x.detail, todayMonth, todayYear, isDisabled)}"
           id="id-secondary-panel-cell-${x => x.detail}"
           part="secondary-panel-cell"
           tabindex="-1"
           role="gridcell"
           grid-column="${(x, c) => c.index + 1}"
-          aria-label="${(x, c) => c.parentContext.parent.getSecondaryPanelCellLabels(x.detail)}"
-          aria-selected="${(x, c) => c.parentContext.parent.getSecondaryPanelCellSelected(x.detail)}"
-          @click="${(x, c) => c.parentContext.parent.$emit('secondaryPanelCellSelected', x.detail)}"
-          @keydown="${(x, c) => c.parentContext.parent.handleSecondaryPanelKeydown(c.event as KeyboardEvent, x.detail)}"
-          ?disabled="${(x, c) => {
-            const parent = c.parentContext.parent;
-            return parent.yearPickerOpen
-              ? parent.isYearDisabled({ year: x.detail, month: 1 })
-              : parent.isMonthDisabled({ year: parent.year, month: x.detail });
-          }}"
-      >
+          aria-label="${(x, c) => parent.getSecondaryPanelCellLabels(x.detail)}"
+          aria-selected="${(x, c) => parent.getSecondaryPanelCellSelected(x.detail)}"
+          @click="${(x, c) => parent.$emit('secondaryPanelCellSelected', x.detail)}"
+          @keydown="${(x, c) => parent.handleSecondaryPanelKeydown(c.event as KeyboardEvent, x.detail)}"
+          ?disabled="${isDisabled}"
+          ?aria-disabled="${isDisabled}"
+        >
         <div
-        class="secondary-panel-cell"
-        aria-labelledby="id-secondary-panel-cell-${x => x.detail}">
+          class="secondary-panel-cell"
+          aria-labelledby="id-secondary-panel-cell-${x => x.detail}">
           ${x => x.text}
         </div>
         <slot name="${x => x.detail}"></slot>
       </${cellTag}>
+  `;
+    }}
   `;
 }
 
@@ -217,42 +210,73 @@ export function secondaryPanelTemplate<T extends Calendar>(options: CalendarOpti
   return html<T>` ${interactiveSecondaryPanelGridTemplate(options, todayMonth, todayYear)} `;
 }
 
+export function navButton<T extends Calendar>(
+  direction: 'up' | 'down',
+  label: string,
+  onClick: () => void,
+  context: T,
+): ViewTemplate<T> {
+  const icon = direction === 'up' ? ArrowUp16 : ArrowDown16;
+  const partName = `navicon-${direction}`;
+
+  return html<T>`
+    <fluent-button
+      size="small"
+      appearance="subtle"
+      icon-only
+      part="${partName}"  // Corrected here
+      role="navigation"
+      aria-label="${label}"
+      tabindex="0"
+      @click="${onClick}"
+    >${icon}</fluent-button>
+  `;
+}
+
+export function calendarHeaderNav<T extends Calendar>(context: T): ViewTemplate<T> {
+  return html<T>`
+    <div class="navicon-container">
+      ${navButton(
+        'up',
+        'Previous Month',
+        () => context.handleSwitchMonth(context.getMonthInfo().previous.month, context.getMonthInfo().previous.year),
+        context,
+      )}
+      ${navButton(
+        'down',
+        'Next Month',
+        () => context.handleSwitchMonth(context.getMonthInfo().next.month, context.getMonthInfo().next.year),
+        context,
+      )}
+    </div>
+  `;
+}
+
+export function footerTemplate<T extends Calendar>(context: T): ViewTemplate<T> {
+  return html`
+    <div class="footer" part="footer">
+      <div
+        class="${context => (context.isToday() ? 'slotted-link inactive' : 'slotted-link')}"
+        tabindecontext="0"
+        @click="${(context, c) => context.goToToday()}"
+        @keydown="${(context, c) => context.handleLinkKeydown(c.event as KeyboardEvent)}"
+      >
+        ${slottedLinkText}
+      </div>
+    </div>
+  `;
+}
+
 /**
  * The template for the Calendar component.
  * @public
  */
-export const template: ElementViewTemplate<Calendar> = html`
-  <template min-date="${x => x.minDate}" max-date="${x => x.maxDate}">
+export const template: ElementViewTemplate<Calendar> = html<Calendar>`
+  <template>
     <div class="control" @keydown=${(x, c) => x.handleControlKeydown(c.event as KeyboardEvent)}>
       <div class="date-view">
         <div class="calendar-container">
-          <div class="header">
-            ${calendarTitleTemplate()}
-            <div class="navicon-container">
-              <fluent-button
-                size="small"
-                appearance="subtle"
-                icon-only
-                part="navicon-up"
-                role="navigation"
-                aria-label="Previous Month"
-                tabindex="0"
-                @click="${x => x.handleSwitchMonth(x.getMonthInfo().previous.month, x.getMonthInfo().previous.year)}"
-                >${ArrowUp16}</fluent-button
-              >
-              <fluent-button
-                size="small"
-                appearance="subtle"
-                icon-only
-                part="navicon-up"
-                role="navigation"
-                aria-label="Next Month"
-                tabindex="0"
-                @click="${x => x.handleSwitchMonth(x.getMonthInfo().next.month, x.getMonthInfo().next.year)}"
-                >${ArrowDown16}</fluent-button
-              >
-            </div>
-          </div>
+          <div class="header">${calendarTitleTemplate} ${calendarHeaderNav}</div>
           <div class="calendar-body" part="calendar-body">
             ${calendarTemplate({
               dataGrid: 'fast-data-grid',
@@ -261,49 +285,26 @@ export const template: ElementViewTemplate<Calendar> = html`
             })}
           </div>
         </div>
-        ${when(
-          x => !x.hasAttribute('monthPickerVisible'),
-          html` <div class="footer" part="footer">
-            <div
-              class=${x => (x.isToday() ? 'slotted-link inactive' : 'slotted-link')}
-              tabindex="0"
-              @click="${(x, c) => x.goToToday()}"
-              @keydown="${(x, c) => x.handleLinkKeydown(c.event as KeyboardEvent)}"
-            >
-              ${slottedLinkText}
-            </div>
-          </div>`,
-        )}
-      </div>
-      ${when(
-        x => x.hasAttribute('monthPickerVisible'),
-        html`<div class="secondary-panel">
+        <div class="secondary-panel">
+          <!-- TODO: control visibility via CSS class switched by monthPickerVisible value -->
           <div class="secondary-panel-container">
             <div class="header">
-              ${x => calendarSecondaryPanelTitleTemplate()}
+              ${calendarSecondaryPanelTitleTemplate}
               <div class="navicon-container">
-                <fluent-button
-                  size="small"
-                  appearance="subtle"
-                  icon-only
-                  part="navicon-up"
-                  role="navigation"
-                  aria-label="${x => (x.yearPickerOpen ? 'Previous Decade' : 'Previous Year')}"
-                  tabindex="0"
-                  @click="${x => x.handleSwitchSecondaryPanel('previous')}"
-                  >${ArrowUp16}</fluent-button
-                >
-                <fluent-button
-                  size="small"
-                  appearance="subtle"
-                  icon-only
-                  part="navicon-up"
-                  role="navigation"
-                  aria-label="${x => (x.yearPickerOpen ? 'Next Decade' : 'Next Year')}"
-                  tabindex="0"
-                  @click="${x => x.handleSwitchSecondaryPanel('next')}"
-                  >${ArrowDown16}</fluent-button
-                >
+                ${(x: Calendar) =>
+                  navButton(
+                    'up',
+                    x.yearPickerOpen ? 'Previous Decade' : 'Previous Year',
+                    () => x.handleSwitchSecondaryPanel('previous'),
+                    x,
+                  )}
+                ${(x: Calendar) =>
+                  navButton(
+                    'down',
+                    x.yearPickerOpen ? 'Next Decade' : 'Next Year',
+                    () => x.handleSwitchSecondaryPanel('next'),
+                    x,
+                  )}
               </div>
             </div>
             <div class="secondary-panel-body">
@@ -314,18 +315,9 @@ export const template: ElementViewTemplate<Calendar> = html`
               })}
             </div>
           </div>
-          <div class="footer" part="footer">
-            <div
-              class="${x => (x.isToday() ? 'slotted-link inactive' : 'slotted-link')}"
-              @click="${(x, c) => x.goToToday()}"
-              tabindex="0"
-              @keydown="${(x, c) => x.handleLinkKeydown(c.event as KeyboardEvent)}"
-            >
-              ${slottedLinkText}
-            </div>
-          </div>
-        </div>`,
-      )}
+          ${footerTemplate}
+        </div>
+      </div>
     </div>
   </template>
 `;

@@ -26,6 +26,98 @@ function logSelectedDates() {
   });
 }
 
+export default {
+  title: 'Components/Calendar',
+  args: {
+    logSelectedDates,
+    showSlottedLink: true,
+    highlightCurrentMonth: false,
+    monthPickerVisible: true,
+    highlightSelectedMonth: false,
+    minDate: '2023-02-02',
+    maxDate: '2025-01-01',
+  },
+  argTypes: {
+    logSelectedDates: {
+      control: '',
+      table: {
+        type: {
+          summary: 'Used only for the storybook to display the selected dates',
+        },
+        defaultValue: {
+          summary: '-',
+        },
+      },
+    },
+    showSlottedLink: {
+      control: 'boolean',
+      table: {
+        type: {
+          summary: 'Show "Go to today" link at the link slot',
+        },
+        defaultValue: {
+          summary: 'true',
+        },
+      },
+    },
+    highlightCurrentMonth: {
+      control: 'boolean',
+      table: {
+        type: {
+          summary: 'The month picker highlights the current month',
+        },
+        defaultValue: {
+          summary: 'false',
+        },
+      },
+    },
+    monthPickerVisible: {
+      control: 'boolean',
+      table: {
+        type: {
+          summary: 'The month-picker is visible',
+        },
+        defaultValue: {
+          summary: 'true',
+        },
+      },
+    },
+    highlightSelectedMonth: {
+      control: 'boolean',
+      table: {
+        type: {
+          summary: 'The month picker highlights the selected month',
+        },
+        defaultValue: {
+          summary: 'false',
+        },
+      },
+    },
+    minDate: {
+      control: 'text',
+      table: {
+        type: {
+          summary: 'Sets the minimum allowed date of the component',
+        },
+        defaultValue: {
+          summary: '-',
+        },
+      },
+    },
+    maxDate: {
+      control: 'text',
+      table: {
+        type: {
+          summary: 'Sets the maximum allowed date of the component',
+        },
+        defaultValue: {
+          summary: '-',
+        },
+      },
+    },
+  },
+} as CalendarStoryMeta;
+
 const storyTemplate = html<CalendarStoryArgs>`
   <script>
     ${x => x.logSelectedDates()};
@@ -48,18 +140,5 @@ const storyTemplate = html<CalendarStoryArgs>`
   >
   </fluent-calendar>
 `;
-
-export default {
-  title: 'Components/Calendar',
-  args: {
-    logSelectedDates,
-    showSlottedLink: true,
-    highlightCurrentMonth: false,
-    monthPickerVisible: true,
-    highlightSelectedMonth: false,
-    minDate: '2023-02-02',
-    maxDate: '2025-01-01',
-  },
-} as CalendarStoryMeta;
 
 export const Calendar = renderComponent(storyTemplate).bind({});

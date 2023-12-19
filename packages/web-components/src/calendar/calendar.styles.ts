@@ -34,15 +34,12 @@ import {
 
 export const styles = css`
   ${display('inline-flex')}
-  :host fast-data-grid-cell[disabled] {
-    color: red;
-  }
   :host .control {
     display: flex;
   }
   :host .date-view {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     width: 224px;
     color: ${colorNeutralForeground1};
     font: ${fontWeightRegular} ${fontSizeBase300} / ${lineHeightBase300} ${fontFamilyBase};
@@ -198,9 +195,12 @@ export const styles = css`
   .secondary-panel-cell {
     cursor: pointer;
   }
-  :host .day.inactive {
+  :host .day.inactive,
+  :host .month.inactive,
+  :host .year.inactive {
     color: ${colorNeutralForeground4};
     background: ${colorTransparentBackground};
+    pointer-events: none;
   }
   :host .date {
     text-align: center;

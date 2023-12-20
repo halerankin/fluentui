@@ -198,7 +198,7 @@ export const styles = css`
   :host .day.inactive,
   :host .month.inactive,
   :host .year.inactive {
-    color: ${colorNeutralForeground4};
+    color: ${colorNeutralForegroundDisabled};
     background: ${colorTransparentBackground};
     pointer-events: none;
   }

@@ -107,9 +107,11 @@ export function secondaryPanelCellTemplate(
     ${(x, c) => {
       const parent = c.parentContext.parent;
 
-      const dateInfo = parent.yearPickerOpen ? { year: x.detail, month: 1 } : { year: parent.year, month: x.detail };
+      // Use monthpickeryear or yearpickerdecade based on the picker state
+      const currentYear = parent.yearPickerOpen ? parent.yearpickerdecade : parent.monthpickeryear;
+      const dateInfo = parent.yearPickerOpen ? { year: x.detail, month: 1 } : { year: currentYear, month: x.detail };
       const checkType: string = parent.yearPickerOpen ? 'year' : 'month';
-      const isDisabled: boolean = parent.isDateDisabled(dateInfo, checkType, parent.minDate, parent.maxDate);
+      const isDisabled: boolean = parent.isDateDisabled(dateInfo, checkType);
 
       return html`
         <${cellTag}
@@ -184,7 +186,7 @@ export function interactiveSecondaryPanelGridTemplate<T extends Calendar>(
   const gridTag = html.partial(tagFor(options.dataGrid));
 
   return html<T>`
-  <${gridTag} class="secondary-panel-grid interact" part="secondary-panel-grid" generate-header="none" role="grid">
+  <${gridTag} class="secondary-panel-grid interact ${todayYear}" part="secondary-panel-grid" generate-header="none" role="grid">
       ${x =>
         x.yearPickerOpen
           ? html`${repeat(
@@ -215,12 +217,14 @@ export function navButton<T extends Calendar>(
   label: string,
   onClick: () => void,
   context: T,
+  isDisabled: boolean,
 ): ViewTemplate<T> {
   const icon = direction === 'up' ? ArrowUp16 : ArrowDown16;
   const partName = `navicon-${direction}`;
 
   return html<T>`
     <fluent-button
+      ?disabled="${isDisabled}"
       size="small"
       appearance="subtle"
       icon-only
@@ -241,13 +245,48 @@ export function calendarHeaderNav<T extends Calendar>(context: T): ViewTemplate<
         'Previous Month',
         () => context.handleSwitchMonth(context.getMonthInfo().previous.month, context.getMonthInfo().previous.year),
         context,
+        context.isDateDisabled(
+          { year: context.getMonthInfo().previous.year, month: context.getMonthInfo().previous.month, day: 1 },
+          'month',
+        ),
       )}
       ${navButton(
         'down',
         'Next Month',
         () => context.handleSwitchMonth(context.getMonthInfo().next.month, context.getMonthInfo().next.year),
         context,
+        context.isDateDisabled(
+          { year: context.getMonthInfo().next.year, month: context.getMonthInfo().next.month, day: 1 },
+          'month',
+        ),
       )}
+    </div>
+  `;
+}
+
+export function secondaryPanelHeaderNav<T extends Calendar>(context: T): ViewTemplate<T> {
+  return html<T>`
+    <div class="navicon-container">
+      ${(x: Calendar) =>
+        navButton(
+          'up',
+          x.yearPickerOpen ? 'Previous Decade' : 'Previous Year',
+          () => x.handleSwitchSecondaryPanel('previous'),
+          x,
+          x.yearPickerOpen
+            ? x.isDateDisabled({ year: x.yearPickerDecade - 10, month: 1, day: 1 }, 'year')
+            : x.isDateDisabled({ year: x.year - 1, month: 1, day: 1 }, 'year'),
+        )}
+      ${(x: Calendar) =>
+        navButton(
+          'down',
+          x.yearPickerOpen ? 'Next Decade' : 'Next Year',
+          () => x.handleSwitchSecondaryPanel('next'),
+          x,
+          x.yearPickerOpen
+            ? x.isDateDisabled({ year: x.yearPickerDecade + 10, month: 1, day: 1 }, 'year')
+            : x.isDateDisabled({ year: x.year + 1, month: 1, day: 1 }, 'year'),
+        )}
     </div>
   `;
 }
@@ -277,7 +316,7 @@ export const template: ElementViewTemplate<Calendar> = html<Calendar>`
       <div class="date-view">
         <div class="calendar-container">
           <div class="header">${calendarTitleTemplate} ${calendarHeaderNav}</div>
-          <div class="calendar-body" part="calendar-body">
+          <div class="calendar-body ${x => x.year}" part="calendar-body">
             ${calendarTemplate({
               dataGrid: 'fast-data-grid',
               dataGridRow: 'fast-data-grid-row',
@@ -288,25 +327,7 @@ export const template: ElementViewTemplate<Calendar> = html<Calendar>`
         <div class="secondary-panel">
           <!-- TODO: control visibility via CSS class switched by monthPickerVisible value -->
           <div class="secondary-panel-container">
-            <div class="header">
-              ${calendarSecondaryPanelTitleTemplate}
-              <div class="navicon-container">
-                ${(x: Calendar) =>
-                  navButton(
-                    'up',
-                    x.yearPickerOpen ? 'Previous Decade' : 'Previous Year',
-                    () => x.handleSwitchSecondaryPanel('previous'),
-                    x,
-                  )}
-                ${(x: Calendar) =>
-                  navButton(
-                    'down',
-                    x.yearPickerOpen ? 'Next Decade' : 'Next Year',
-                    () => x.handleSwitchSecondaryPanel('next'),
-                    x,
-                  )}
-              </div>
-            </div>
+            <div class="header">${calendarSecondaryPanelTitleTemplate} ${secondaryPanelHeaderNav}</div>
             <div class="secondary-panel-body">
               ${secondaryPanelTemplate({
                 dataGrid: 'fast-data-grid',

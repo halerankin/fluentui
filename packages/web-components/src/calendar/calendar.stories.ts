@@ -34,8 +34,8 @@ export default {
     highlightCurrentMonth: false,
     monthPickerVisible: true,
     highlightSelectedMonth: false,
-    minDate: '2023-02-02',
-    maxDate: '2025-01-01',
+    minDate: '2023-05-02',
+    maxDate: '2025-05-03',
   },
   argTypes: {
     logSelectedDates: {
@@ -123,12 +123,15 @@ const storyTemplate = html<CalendarStoryArgs>`
     ${x => x.logSelectedDates()};
   </script>
   <style>
-    .selected-dates-container {
+    .presentation {
       font: ${fontWeightRegular} ${fontSizeBase300} / ${lineHeightBase300} ${fontFamilyBase};
       margin-bottom: 10px;
     }
   </style>
-  <div class="selected-dates-container">Selected Date: Not Set</div>
+  <div class="presentation selected-dates-container">Selected Date: Not Set</div>
+  <div class="presentation date-boundary-container">
+    Date Boundaries (yyyy-mm-dd): ${x => (x.minDate && x.maxDate ? `Min: ${x.minDate}, Max: ${x.maxDate}` : 'Not Set')}
+  </div>
   <fluent-calendar
     class="fluent-calendar"
     ?show-slotted-link=${x => x.showSlottedLink}

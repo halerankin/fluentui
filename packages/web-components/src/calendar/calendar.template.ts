@@ -110,8 +110,9 @@ export function secondaryPanelCellTemplate(
       // Use monthpickeryear or yearpickerdecade based on the picker state
       const currentYear = parent.yearPickerOpen ? parent.yearpickerdecade : parent.monthpickeryear;
       const dateInfo = parent.yearPickerOpen ? { year: x.detail, month: 1 } : { year: currentYear, month: x.detail };
-      const checkType: string = parent.yearPickerOpen ? 'year' : 'month';
-      const isDisabled: boolean = parent.isDateDisabled(dateInfo, checkType);
+      const isDisabled: boolean = parent.yearPickerOpen
+        ? parent.isYearDisabled(dateInfo.year)
+        : parent.isMonthDisabled(dateInfo.year, dateInfo.month);
 
       return html`
         <${cellTag}
@@ -186,7 +187,7 @@ export function interactiveSecondaryPanelGridTemplate<T extends Calendar>(
   const gridTag = html.partial(tagFor(options.dataGrid));
 
   return html<T>`
-  <${gridTag} class="secondary-panel-grid interact ${todayYear}" part="secondary-panel-grid" generate-header="none" role="grid">
+  <${gridTag} class="secondary-panel-grid interact" part="secondary-panel-grid" generate-header="none" role="grid">
       ${x =>
         x.yearPickerOpen
           ? html`${repeat(
@@ -228,12 +229,13 @@ export function navButton<T extends Calendar>(
       size="small"
       appearance="subtle"
       icon-only
-      part="${partName}"  // Corrected here
+      part="${partName}"
       role="navigation"
       aria-label="${label}"
       tabindex="0"
       @click="${onClick}"
-    >${icon}</fluent-button>
+      >${icon}</fluent-button
+    >
   `;
 }
 
@@ -245,20 +247,14 @@ export function calendarHeaderNav<T extends Calendar>(context: T): ViewTemplate<
         'Previous Month',
         () => context.handleSwitchMonth(context.getMonthInfo().previous.month, context.getMonthInfo().previous.year),
         context,
-        context.isDateDisabled(
-          { year: context.getMonthInfo().previous.year, month: context.getMonthInfo().previous.month, day: 1 },
-          'month',
-        ),
+        context.isMonthDisabled(context.getMonthInfo().previous.year, context.getMonthInfo().previous.month),
       )}
       ${navButton(
         'down',
         'Next Month',
         () => context.handleSwitchMonth(context.getMonthInfo().next.month, context.getMonthInfo().next.year),
         context,
-        context.isDateDisabled(
-          { year: context.getMonthInfo().next.year, month: context.getMonthInfo().next.month, day: 1 },
-          'month',
-        ),
+        context.isMonthDisabled(context.getMonthInfo().next.year, context.getMonthInfo().next.month),
       )}
     </div>
   `;
@@ -267,26 +263,24 @@ export function calendarHeaderNav<T extends Calendar>(context: T): ViewTemplate<
 export function secondaryPanelHeaderNav<T extends Calendar>(context: T): ViewTemplate<T> {
   return html<T>`
     <div class="navicon-container">
-      ${(x: Calendar) =>
-        navButton(
-          'up',
-          x.yearPickerOpen ? 'Previous Decade' : 'Previous Year',
-          () => x.handleSwitchSecondaryPanel('previous'),
-          x,
-          x.yearPickerOpen
-            ? x.isDateDisabled({ year: x.yearPickerDecade - 10, month: 1, day: 1 }, 'year')
-            : x.isDateDisabled({ year: x.year - 1, month: 1, day: 1 }, 'year'),
-        )}
-      ${(x: Calendar) =>
-        navButton(
-          'down',
-          x.yearPickerOpen ? 'Next Decade' : 'Next Year',
-          () => x.handleSwitchSecondaryPanel('next'),
-          x,
-          x.yearPickerOpen
-            ? x.isDateDisabled({ year: x.yearPickerDecade + 10, month: 1, day: 1 }, 'year')
-            : x.isDateDisabled({ year: x.year + 1, month: 1, day: 1 }, 'year'),
-        )}
+      ${navButton(
+        'up',
+        context.yearPickerOpen ? 'Previous Decade' : 'Previous Year',
+        () => context.handleSwitchSecondaryPanel('previous'),
+        context,
+        context.yearPickerOpen
+          ? context.isDecadeDisabled(context.yearPickerDecade - 10)
+          : context.isYearDisabled(context.year - 1),
+      )}
+      ${navButton(
+        'down',
+        context.yearPickerOpen ? 'Next Decade' : 'Next Year',
+        () => context.handleSwitchSecondaryPanel('next'),
+        context,
+        context.yearPickerOpen
+          ? context.isDecadeDisabled(context.yearPickerDecade + 10)
+          : context.isYearDisabled(context.year + 1),
+      )}
     </div>
   `;
 }

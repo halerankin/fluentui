@@ -207,16 +207,71 @@ export class Calendar extends FASTCalendar {
   @observable
   public maxDate?: string;
 
-  public minDateChanged(oldValue: string, newValue: string) {
-    // console.log('minDateChanged: ', oldValue, newValue);
+  private get minDateObj(): Date | null {
+    return this.minDate ? new Date(this.minDate) : null;
   }
 
-  public maxDateChanged(oldValue: string, newValue: string) {
-    // console.log('maxDateChanged: ', oldValue, newValue);
+  private get maxDateObj(): Date | null {
+    return this.maxDate ? new Date(this.maxDate) : null;
   }
 
-  static get observedAttributes() {
-    return ['min-date', 'max-date'];
+  private isDateDisabled(date: Date): boolean {
+    if (this.minDateObj || this.maxDateObj) {
+      const min = this.minDateObj;
+      const max = this.maxDateObj;
+
+      if (min !== null && date < min) {
+        return true; // The date is before the minimum date
+      }
+
+      if (max !== null && date > max) {
+        return true; // The date is after the maximum date
+      }
+    }
+    return false;
+  }
+
+  public isMonthDisabled(year: number, month: number): boolean {
+    const startOfMonth = new Date(year, month - 1, 1);
+    const endOfMonth = new Date(year, month, 0);
+    return this.isDateDisabled(startOfMonth) && this.isDateDisabled(endOfMonth);
+  }
+
+  // public isMonthCompletelyDisabled(year: number, month: number): boolean {
+  //   const startDate = new Date(year, month - 1, 1); // Start of the month
+  //   const endDate = new Date(year, month, 0); // End of the month
+
+  //   const minDate = this.minDate ? new Date(this.minDate) : null;
+  //   const maxDate = this.maxDate ? new Date(this.maxDate) : null;
+
+  //   if (minDate !== null && endDate < minDate) {
+  //     return true;
+  //   }
+  //   if (maxDate !== null && startDate > maxDate) {
+  //     return true;
+  //   }
+
+  //   return false;
+  // }
+
+  public isYearDisabled(year: number): boolean {
+    // Check if any month in the year is not disabled
+    for (let month = 0; month < 12; month++) {
+      if (!this.isMonthDisabled(year, month)) {
+        return false; // If any month is not disabled, the year is not disabled
+      }
+    }
+    return true; // If all months are disabled, the year is disabled
+  }
+
+  public isDecadeDisabled(decadeStartYear: number): boolean {
+    // Check if any year in the decade is not disabled
+    for (let year = decadeStartYear; year < decadeStartYear + 11; year++) {
+      if (!this.isYearDisabled(year)) {
+        return false; // If any year is not disabled, the decade is not disabled
+      }
+    }
+    return true; // If all years are disabled, the decade is disabled
   }
 
   /**
@@ -289,7 +344,7 @@ export class Calendar extends FASTCalendar {
         this.maxDate = newValue;
       }
 
-      // Call updateCalendar to refresh the UI with new min/max date
+      // Refresh the UI with new min/max date
       // this.updateCalendar();
     }
   }
@@ -359,7 +414,7 @@ export class Calendar extends FASTCalendar {
    * @public
    */
   public handleSwitchMonth(month: number, year: number): void {
-    if (this.isDateDisabled({ day: 1, month: month, year: year }, 'month')) {
+    if (this.isMonthDisabled(year, month)) {
       return; // Exit if the target month/year is disabled
     }
     const yearPickerInfo = this.getYearPickerInfo();
@@ -391,6 +446,7 @@ export class Calendar extends FASTCalendar {
     this.monthPickerYear = year;
     this.yearPickerDecade = year - (year % 10);
 
+    // Trigger UI update
     this.updateCalendar();
 
     Updates.enqueue(() => {
@@ -422,7 +478,9 @@ export class Calendar extends FASTCalendar {
         : this.monthPickerYear + 1;
 
     // Check if the target year or decade is disabled
-    if (this.isDateDisabled({ day: 1, month: 1, year: targetYear }, this.yearPickerOpen ? 'year' : 'month')) {
+    const isDisabled = this.yearPickerOpen ? this.isDecadeDisabled(targetYear) : this.isYearDisabled(targetYear);
+
+    if (isDisabled) {
       return; // Exit if the target year/decade is disabled
     }
 
@@ -438,7 +496,7 @@ export class Calendar extends FASTCalendar {
 
     this.secondaryPanelTransition(direction);
 
-    // Call updateCalendar to refresh the UI with the new month/year
+    // Refresh the UI with the new month/year
     this.updateCalendar();
   }
 
@@ -451,46 +509,47 @@ export class Calendar extends FASTCalendar {
     this.yearPickerDecade = this.monthPickerYear - (this.monthPickerYear % 10);
   }
 
-  public isDateDisabled(dateInfo: CalendarDateInfo, checkType: 'month' | 'year'): boolean {
-    const min = this.minDate ? new Date(this.minDate) : null;
-    const max = this.maxDate ? new Date(this.maxDate) : null;
+  // public isDateDisabled(dateInfo: CalendarDateInfo, checkType: 'month' | 'year'): boolean {
+  //   const min = this.minDate ? new Date(this.minDate) : null;
+  //   const max = this.maxDate ? new Date(this.maxDate) : null;
 
-    if (checkType === 'year') {
-      const yearStart = new Date(dateInfo.year, 0, 1); // January 1st
-      const yearEnd = new Date(dateInfo.year, 11, 31); // December 31st
+  //   if (checkType === 'year') {
+  //     const yearStart = new Date(dateInfo.year, 0, 1); // January 1st
+  //     const yearEnd = new Date(dateInfo.year, 11, 31); // December 31st
 
-      return (min !== null && yearStart < min) || (max !== null && yearEnd > max);
-    }
+  //     return (min !== null && yearStart < min) || (max !== null && yearEnd > max);
+  //   }
 
-    if (checkType === 'month') {
-      // Iterate through each day of the month
-      const daysInMonth = new Date(dateInfo.year, dateInfo.month, 0).getDate();
-      for (let day = 1; day <= daysInMonth; day++) {
-        const currentDate = new Date(dateInfo.year, dateInfo.month - 1, day);
+  //   if (checkType === 'month') {
+  //     // Iterate through each day of the month
+  //     const daysInMonth = new Date(dateInfo.year, dateInfo.month, 0).getDate();
+  //     for (let day = 1; day <= daysInMonth; day++) {
+  //       const currentDate = new Date(dateInfo.year, dateInfo.month - 1, day);
 
-        // If any day is not disabled, the month is not disabled
-        if (!(min && currentDate < min) && !(max && currentDate > max)) {
-          return false;
-        }
-      }
-      // If all days are disabled, then the month is disabled
-      return true;
-    }
+  //       // If any day is not disabled, the month is not disabled
+  //       if (!(min && currentDate < min) && !(max && currentDate > max)) {
+  //         return false;
+  //       }
+  //     }
+  //     // If all days are disabled, then the month is disabled
+  //     return true;
+  //   }
 
-    // Default return (should not reach here in normal conditions)
-    return false;
-  }
+  //   // Default return (should not reach here in normal conditions)
+  //   return false;
+  // }
 
   private updateCalendar(): void {
-    // Ensure the component's children are rendered
     if (this.shadowRoot) {
       const minDate = this.minDate ? new Date(this.minDate) : null;
       const maxDate = this.maxDate ? new Date(this.maxDate) : null;
-      this.updateDayClasses(minDate!, maxDate!);
+      this.updateDayClasses(minDate, maxDate);
+      this.updateMonthClasses(minDate, maxDate);
+      this.updateYearClasses(minDate, maxDate);
     }
   }
 
-  public updateDayClasses(minDate: Date, maxDate: Date): void {
+  public updateDayClasses(minDate: Date | null, maxDate: Date | null): void {
     if (this.shadowRoot) {
       const calendarBody = this.shadowRoot.querySelector('.calendar-body');
       if (calendarBody) {
@@ -498,12 +557,8 @@ export class Calendar extends FASTCalendar {
         dayCells.forEach(cell => {
           const dateStr = cell.querySelector('slot')?.getAttribute('name');
           if (dateStr) {
-            // Reformatting dateStr if necessary
-            const formattedDateStr = this.reformatDateStr(dateStr);
-            const date = new Date(formattedDateStr);
-
+            const date = new Date(this.reformatDateStr(dateStr));
             if ((minDate && date < minDate) || (maxDate && date > maxDate)) {
-              console.log('date is disabled: ', date, cell);
               cell.classList.add('inactive');
             } else {
               cell.classList.remove('inactive');
@@ -514,11 +569,26 @@ export class Calendar extends FASTCalendar {
     }
   }
 
+  public updateMonthClasses(minDate: Date | null, maxDate: Date | null): void {
+    // Logic to update the classes of month elements based on minDate and maxDate
+    // ...
+  }
+
+  public updateYearClasses(minDate: Date | null, maxDate: Date | null): void {
+    // Logic to update the classes of year elements based on minDate and maxDate
+    // ...
+  }
+
   private reformatDateStr(dateStr: string): string {
-    // Example: Convert 'MM-DD-YYYY' to 'YYYY-MM-DD'
-    // Adjust this based on the actual format of dateStr
     const parts = dateStr.split('-');
-    return `${parts[2]}-${parts[0]}-${parts[1]}`;
+    if (parts.length === 3) {
+      // Assuming the format is 'MM-DD-YYYY'
+      return `${parts[2]}-${parts[0]}-${parts[1]}`;
+    } else {
+      // Handle unexpected format or return a default value
+      console.error('Invalid date format:', dateStr);
+      return dateStr; // or return a sensible default
+    }
   }
 
   /**
